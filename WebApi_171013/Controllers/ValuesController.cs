@@ -11,8 +11,63 @@ namespace WebApi_171013.Controllers
     public class ValuesController : ApiController
     {
         // GET api/values
-        //public IEnumerable<string> Get()
-        public string Get()
+        public IEnumerable<string> Get()
+        {
+            return new string[] { "value1", "value2" };
+        }
+
+        public long Get(String msg_signature,String timestamp,String nonce,String echostr)
+        {
+            //企业微信后台开发者设置的token, corpID, EncodingAESKey
+            string sToken = "5WQvoxc7HKzxSWKCc3O";
+            string sCorpID = "wwb2491d1e47ba94f8";
+            string sEncodingAESKey = "4CyeXxKsWzkYMxepDmdUHzNYHQoJ6QbAFPVN8OvUG4p";
+            //string sToken = "QDG6eK";
+            //string sCorpID = "wx5823bf96d3bd56c7";
+            //string sEncodingAESKey = "jWmYm7qr5nMoAUwZRjGtBxmz3KA1tkAj3ykkR6q2B2C";
+
+            /*
+			------------使用示例一：验证回调URL---------------
+			*企业开启回调模式时，企业微信会向验证url发送一个get请求 
+			假设点击验证时，企业收到类似请求：
+			* GET /cgi-bin/wxpush?msg_signature=5c45ff5e21c57e6ad56bac8758b79b1d9ac89fd3&timestamp=1409659589&nonce=263014780&echostr=P9nAzCzyDtyTWESHep1vC5X9xho%2FqYX3Zpb4yKa9SKld1DsH3Iyt3tP3zNdtp%2B4RPcs8TgAE7OaBO%2BFZXvnaqQ%3D%3D 
+			* HTTP/1.1 Host: qy.weixin.qq.com
+
+			* 接收到该请求时，企业应			1.解析出Get请求的参数，包括消息体签名(msg_signature)，时间戳(timestamp)，随机数字串(nonce)以及企业微信推送过来的随机加密字符串(echostr),
+			这一步注意作URL解码。
+			2.验证消息体签名的正确性 
+			3.解密出echostr原文，将原文当作Get请求的response，返回给企业微信
+			第2，3步可以用企业微信提供的库函数VerifyURL来实现。
+			*/
+
+            Tencent.WXBizMsgCrypt wxcpt = new Tencent.WXBizMsgCrypt(sToken, sEncodingAESKey, sCorpID);
+            // string sVerifyMsgSig = HttpUtils.ParseUrl("msg_signature");
+            //string sVerifyMsgSig = "5c45ff5e21c57e6ad56bac8758b79b1d9ac89fd3";
+            string sVerifyMsgSig = msg_signature;
+            // string sVerifyTimeStamp = HttpUtils.ParseUrl("timestamp");
+            //string sVerifyTimeStamp = "1409659589";
+            string sVerifyTimeStamp = timestamp;
+            // string sVerifyNonce = HttpUtils.ParseUrl("nonce");
+            //string sVerifyNonce = "263014780";
+            string sVerifyNonce = nonce;
+            // string sVerifyEchoStr = HttpUtils.ParseUrl("echostr");
+            //string sVerifyEchoStr = "P9nAzCzyDtyTWESHep1vC5X9xho/qYX3Zpb4yKa9SKld1DsH3Iyt3tP3zNdtp+4RPcs8TgAE7OaBO+FZXvnaqQ==";
+            string sVerifyEchoStr = echostr;
+            int ret = 0;
+            string sEchoStr = "";
+            ret = wxcpt.VerifyURL(sVerifyMsgSig, sVerifyTimeStamp, sVerifyNonce, sVerifyEchoStr, ref sEchoStr);
+            if (ret != 0)
+            {
+                System.Console.WriteLine("ERR: VerifyURL fail, ret: " + ret);
+                //return;
+            }
+            //ret==0表示验证成功，sEchoStr参数表示明文，用户需要将sEchoStr作为get请求的返回参数，返回给企业微信。
+            // HttpUtils.SetResponse(sEchoStr);
+            //return sEchoStr;
+            return Convert.ToInt64(sEchoStr);
+        }
+
+        public string Get(String msg_signature)
         {
             //企业微信后台开发者设置的token, corpID, EncodingAESKey
             string sToken = "QDG6eK";
@@ -35,7 +90,8 @@ namespace WebApi_171013.Controllers
 
             Tencent.WXBizMsgCrypt wxcpt = new Tencent.WXBizMsgCrypt(sToken, sEncodingAESKey, sCorpID);
             // string sVerifyMsgSig = HttpUtils.ParseUrl("msg_signature");
-            string sVerifyMsgSig = "5c45ff5e21c57e6ad56bac8758b79b1d9ac89fd3";
+            //string sVerifyMsgSig = "5c45ff5e21c57e6ad56bac8758b79b1d9ac89fd3";
+            string sVerifyMsgSig = msg_signature;
             // string sVerifyTimeStamp = HttpUtils.ParseUrl("timestamp");
             string sVerifyTimeStamp = "1409659589";
             // string sVerifyNonce = HttpUtils.ParseUrl("nonce");
@@ -134,8 +190,7 @@ namespace WebApi_171013.Controllers
             // 加密成功，企业需要将加密之后的sEncryptMsg返回
             // HttpUtils.SetResponse(sEncryptMsg);
             */
-
-            //return new string[] { "value1", "value2" };
+            
         }
 
         // GET api/values/5
