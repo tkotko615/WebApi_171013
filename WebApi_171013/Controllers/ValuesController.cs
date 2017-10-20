@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
+using System.Web;
 using System.Web.Http;
 using System.Xml;
 
@@ -132,7 +135,8 @@ namespace WebApi_171013.Controllers
 
         //範例三:接收消息並解密,再加密
         [HttpPost]
-        public String Post2(String msg_signature, String timestamp, String nonce, [FromBody]string xml)
+        //public String Post2(String msg_signature, String timestamp, String nonce, [FromBody]string xml)
+        public String Post2(String msg_signature, String timestamp, String nonce)
         {
             //企业微信后台开发者设置的token, corpID, EncodingAESKey
             string sToken = "5WQvoxc7HKzxSWKCc3O";
@@ -141,6 +145,68 @@ namespace WebApi_171013.Controllers
             //string sToken = "QDG6eK";
             //string sCorpID = "wx5823bf96d3bd56c7";
             //string sEncodingAESKey = "jWmYm7qr5nMoAUwZRjGtBxmz3KA1tkAj3ykkR6q2B2C";
+
+            /*
+            ------------使用示例二：对用户回复的消息解密---------------
+			用户回复消息或者点击事件响应时，企业会收到回调消息，此消息是经过企业微信加密之后的密文以post形式发送给企业，密文格式请参考官方文档
+			假设企业收到企业微信的回调消息如下：
+			POST /cgi-bin/wxpush? msg_signature=477715d11cdb4164915debcba66cb864d751f3e6&timestamp=1409659813&nonce=1372623149 HTTP/1.1
+			Host: qy.weixin.qq.com
+			Content-Length: 613
+			<xml>			<ToUserName><![CDATA[wx5823bf96d3bd56c7]]></ToUserName><Encrypt><![CDATA[RypEvHKD8QQKFhvQ6QleEB4J58tiPdvo+rtK1I9qca6aM/wvqnLSV5zEPeusUiX5L5X/0lWfrf0QADHHhGd3QczcdCUpj911L3vg3W/sYYvuJTs3TUUkSUXxaccAS0qhxchrRYt66wiSpGLYL42aM6A8dTT+6k4aSknmPj48kzJs8qLjvd4Xgpue06DOdnLxAUHzM6+kDZ+HMZfJYuR+LtwGc2hgf5gsijff0ekUNXZiqATP7PF5mZxZ3Izoun1s4zG4LUMnvw2r+KqCKIw+3IQH03v+BCA9nMELNqbSf6tiWSrXJB3LAVGUcallcrw8V2t9EL4EhzJWrQUax5wLVMNS0+rUPA3k22Ncx4XXZS9o0MBH27Bo6BpNelZpS+/uh9KsNlY6bHCmJU9p8g7m3fVKn28H3KDYA5Pl/T8Z1ptDAVe0lXdQ2YoyyH2uyPIGHBZZIs2pDBS8R07+qN+E7Q==]]></Encrypt>
+			<AgentID><![CDATA[218]]></AgentID>
+			</xml>
+
+			企业收到post请求之后应该			1.解析出url上的参数，包括消息体签名(msg_signature)，时间戳(timestamp)以及随机数字串(nonce)
+			2.验证消息体签名的正确性。
+			3.将post请求的数据进行xml解析，并将<Encrypt>标签的内容进行解密，解密出来的明文即是用户回复消息的明文，明文格式请参考官方文档
+			第2，3步可以用企业微信提供的库函数DecryptMsg来实现。
+			*/
+            
+            StreamReader sr = new StreamReader(HttpContext.Current.Request.InputStream, Encoding.UTF8);
+            XmlDocument xdoc = new XmlDocument();
+            xdoc.Load(sr);
+            sr.Close();
+            sr.Dispose();
+
+            //string sToUserName = doc.SelectSingleNode("xml").SelectSingleNode("ToUserName").InnerText;
+            //string sAgentID = doc.SelectSingleNode("xml").SelectSingleNode("AgentID").InnerText;
+            //string sXML = xdoc.InnerXml;
+
+            Tencent.WXBizMsgCrypt wxcpt = new Tencent.WXBizMsgCrypt(sToken, sEncodingAESKey, sCorpID);
+            // string sReqMsgSig = HttpUtils.ParseUrl("msg_signature");
+            //string sReqMsgSig = "477715d11cdb4164915debcba66cb864d751f3e6";
+            string sReqMsgSig = msg_signature;
+            // string sReqTimeStamp = HttpUtils.ParseUrl("timestamp");
+            //string sReqTimeStamp = "1409659813";
+            string sReqTimeStamp = timestamp;
+            // string sReqNonce = HttpUtils.ParseUrl("nonce");
+            //string sReqNonce = "1372623149";
+            string sReqNonce = nonce;
+            // Post请求的密文数据
+            // string sReqData = HttpUtils.PostData();
+            //string sReqData = "<xml><ToUserName><![CDATA[wx5823bf96d3bd56c7]]></ToUserName><Encrypt><![CDATA[RypEvHKD8QQKFhvQ6QleEB4J58tiPdvo+rtK1I9qca6aM/wvqnLSV5zEPeusUiX5L5X/0lWfrf0QADHHhGd3QczcdCUpj911L3vg3W/sYYvuJTs3TUUkSUXxaccAS0qhxchrRYt66wiSpGLYL42aM6A8dTT+6k4aSknmPj48kzJs8qLjvd4Xgpue06DOdnLxAUHzM6+kDZ+HMZfJYuR+LtwGc2hgf5gsijff0ekUNXZiqATP7PF5mZxZ3Izoun1s4zG4LUMnvw2r+KqCKIw+3IQH03v+BCA9nMELNqbSf6tiWSrXJB3LAVGUcallcrw8V2t9EL4EhzJWrQUax5wLVMNS0+rUPA3k22Ncx4XXZS9o0MBH27Bo6BpNelZpS+/uh9KsNlY6bHCmJU9p8g7m3fVKn28H3KDYA5Pl/T8Z1ptDAVe0lXdQ2YoyyH2uyPIGHBZZIs2pDBS8R07+qN+E7Q==]]></Encrypt><AgentID><![CDATA[218]]></AgentID></xml>";
+            string sReqData = xdoc.InnerXml;
+            string sError = "";
+            string sMsg = "";  // 解析之后的明文
+            int ret = 0;
+            ret = wxcpt.DecryptMsg(sReqMsgSig, sReqTimeStamp, sReqNonce, sReqData, ref sMsg);
+            if (ret != 0)
+            {
+                //System.Console.WriteLine("ERR: Decrypt Fail, ret: " + ret);
+                //return;
+                sError = "ERR: 解密失敗, ret: " + ret;
+            }
+            // ret==0表示解密成功，sMsg表示解密之后的明文xml串
+            // TODO: 对明文的处理
+            // For example:
+            string content = "";
+            //XmlDocument doc = new XmlDocument();
+            //doc.LoadXml(sMsg);
+            //XmlNode root = doc.FirstChild;
+            //content = root["Content"].InnerText;
+            content= sMsg.Substring(0,46);
+
 
             /*
 			------------使用示例三：企业回复用户消息的加密---------------
@@ -160,55 +226,29 @@ namespace WebApi_171013.Controllers
 			2.将明文加密得到密文。	3.用密文，步骤1生成的timestamp,nonce和企业在企业微信设定的token生成消息体签名。			4.将密文，消息体签名，时间戳，随机数字串拼接成xml格式的字符串，发送给企业。
 			以上2，3，4步可以用企业微信提供的库函数EncryptMsg来实现。
 			*/
-            Tencent.WXBizMsgCrypt wxcpt = new Tencent.WXBizMsgCrypt(sToken, sEncodingAESKey, sCorpID);
-            // string sReqMsgSig = HttpUtils.ParseUrl("msg_signature");
-            //string sReqMsgSig = "477715d11cdb4164915debcba66cb864d751f3e6";
-            string sReqMsgSig = msg_signature;
-            // string sReqTimeStamp = HttpUtils.ParseUrl("timestamp");
-            //string sReqTimeStamp = "1409659813";
-            string sReqTimeStamp = timestamp;
-            // string sReqNonce = HttpUtils.ParseUrl("nonce");
-            //string sReqNonce = "1372623149";
-            string sReqNonce = nonce;
-            // Post请求的密文数据
-            // string sReqData = HttpUtils.PostData();
-            //string sReqData = "<xml><ToUserName><![CDATA[wx5823bf96d3bd56c7]]></ToUserName><Encrypt><![CDATA[RypEvHKD8QQKFhvQ6QleEB4J58tiPdvo+rtK1I9qca6aM/wvqnLSV5zEPeusUiX5L5X/0lWfrf0QADHHhGd3QczcdCUpj911L3vg3W/sYYvuJTs3TUUkSUXxaccAS0qhxchrRYt66wiSpGLYL42aM6A8dTT+6k4aSknmPj48kzJs8qLjvd4Xgpue06DOdnLxAUHzM6+kDZ+HMZfJYuR+LtwGc2hgf5gsijff0ekUNXZiqATP7PF5mZxZ3Izoun1s4zG4LUMnvw2r+KqCKIw+3IQH03v+BCA9nMELNqbSf6tiWSrXJB3LAVGUcallcrw8V2t9EL4EhzJWrQUax5wLVMNS0+rUPA3k22Ncx4XXZS9o0MBH27Bo6BpNelZpS+/uh9KsNlY6bHCmJU9p8g7m3fVKn28H3KDYA5Pl/T8Z1ptDAVe0lXdQ2YoyyH2uyPIGHBZZIs2pDBS8R07+qN+E7Q==]]></Encrypt><AgentID><![CDATA[218]]></AgentID></xml>";
-            string sReqData = xml;
-            string sMsg = "";  // 解析之后的明文
-            int ret = 0;
-            ret = wxcpt.DecryptMsg(sReqMsgSig, sReqTimeStamp, sReqNonce, sReqData, ref sMsg);
-            if (ret != 0)
-            {
-                System.Console.WriteLine("ERR: Decrypt Fail, ret: " + ret);
-                //return;
-            }
-            // ret==0表示解密成功，sMsg表示解密之后的明文xml串
-            // TODO: 对明文的处理
-            // For example:
-            /*
-            if (string.IsNullOrEmpty(sMsg))
-            {
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(sMsg);
-                XmlNode root = doc.FirstChild;
-                string content = root["Content"].InnerText;
-            }
-            */
-            string content = "";
-            if (string.IsNullOrEmpty(sMsg))
+
+            //content = xdoc.SelectSingleNode("xml").SelectSingleNode("ToUserName").InnerText;
+            if (string.IsNullOrEmpty(content))
             {
                 content = "vnull";
             }
 
             // 需要发送的明文
             //string sRespData = "<xml><ToUserName><![CDATA[mycreate]]></ToUserName><FromUserName><![CDATA[wx582396d3bd56c7]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[this is a test]]></Content><MsgId>1234567890123456</MsgId><AgentID>128</AgentID></xml>";
-            string sRespData = "<xml><ToUserName><![CDATA[mycreate]]></ToUserName><FromUserName><![CDATA[wx582396d3bd56c7]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[ACES "+ content+" this is a test]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
+            string sRespData = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[ACES " + content+" this is a test]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
             string sEncryptMsg = ""; //xml格式的密文
             ret = wxcpt.EncryptMsg(sRespData, sReqTimeStamp, sReqNonce, ref sEncryptMsg);
             if (ret != 0)
             {
                 System.Console.WriteLine("ERR: EncryptMsg Fail, ret: " + ret);
                 //return;
+                sError = "ERR: 加密失敗, ret: " + ret;
+            }
+            if (string.IsNullOrEmpty(sError))
+            { }
+            else{
+                sRespData = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[Error " + sError + " ]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
+                ret = wxcpt.EncryptMsg(sRespData, sReqTimeStamp, sReqNonce, ref sEncryptMsg);
             }
             // TODO:
             // 加密成功，企业需要将加密之后的sEncryptMsg返回
