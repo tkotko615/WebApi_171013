@@ -20,7 +20,7 @@ namespace WebApi_171013.Controllers
         }
 
         //範例一:驗證回調URL
-        public long Get(String msg_signature,String timestamp,String nonce,String echostr)
+        public long Get(String msg_signature, String timestamp, String nonce, String echostr)
         {
             //企业微信后台开发者设置的token, corpID, EncodingAESKey
             string sToken = "5WQvoxc7HKzxSWKCc3O";
@@ -162,7 +162,7 @@ namespace WebApi_171013.Controllers
 			3.将post请求的数据进行xml解析，并将<Encrypt>标签的内容进行解密，解密出来的明文即是用户回复消息的明文，明文格式请参考官方文档
 			第2，3步可以用企业微信提供的库函数DecryptMsg来实现。
 			*/
-            
+
             StreamReader sr = new StreamReader(HttpContext.Current.Request.InputStream, Encoding.UTF8);
             XmlDocument xdoc = new XmlDocument();
             xdoc.Load(sr);
@@ -189,23 +189,91 @@ namespace WebApi_171013.Controllers
             string sReqData = xdoc.InnerXml;
             string sError = "";
             string sMsg = "";  // 解析之后的明文
+            string sRespData_p1 = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[";
+            string sRespData_p3 = "]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
+            string sRespData_p2 = "";
+            string sRespData = "";  // 需要发送的明文
+            string sEncryptMsg = ""; //xml格式的密文
             int ret = 0;
             ret = wxcpt.DecryptMsg(sReqMsgSig, sReqTimeStamp, sReqNonce, sReqData, ref sMsg);
             if (ret != 0)
             {
                 //System.Console.WriteLine("ERR: Decrypt Fail, ret: " + ret);
                 //return;
-                sError = "ERR: 解密失敗, ret: " + ret;
+                sRespData_p2 = "ERR: 解密失敗, ret: " + ret;
+                sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                ret = wxcpt.EncryptMsg(sRespData, sReqTimeStamp, sReqNonce, ref sEncryptMsg);
+                return sEncryptMsg;
             }
             // ret==0表示解密成功，sMsg表示解密之后的明文xml串
             // TODO: 对明文的处理
             // For example:
             string content = "";
-            //XmlDocument doc = new XmlDocument();
-            //doc.LoadXml(sMsg);
-            //XmlNode root = doc.FirstChild;
-            //content = root["Content"].InnerText;
-            content= sMsg.Substring(0,46);
+            string event_type = "";
+            string event_key = "";
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(sMsg);
+            XmlNode root = doc.FirstChild;
+            string msgtype = root["MsgType"].InnerText;
+            switch (msgtype)
+            {
+                case "text":
+                    content = root["Content"].InnerText;
+                    sRespData_p2 = "您輸入: "+content;
+                    sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                    break;
+                case "event":
+                    event_type = root["Event"].InnerText;
+                    if (event_type=="click")
+                    {
+                        event_key= root["EventKey"].InnerText;
+                        switch (event_key)
+                        {
+                            case "menu_hit":
+                                sRespData_p2 = "您按了點擊測試鈕";
+                                sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                                break;
+                            default:
+                                sRespData_p2 = "您按了某個鈕";
+                                sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                                break;
+                        }
+                    }
+                    else if(event_type == "scancode_push")
+                    {
+                        event_key = root["EventKey"].InnerText;
+                        if (event_key=="menu_push")
+                        {
+                            //掃描後回傳xml
+                            //< ScanCodeInfo >
+                            //< ScanType >< ![CDATA[qrcode]] ></ ScanType >
+                            //< ScanResult >< ![CDATA[1]] ></ ScanResult >
+                            //</ ScanCodeInfo >
+                            sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(1).InnerText;
+                            sRespData_p2 = "您的掃描值: " + sRespData_p2;
+                            //sRespData_p2 = sRespData_p2.Replace("qrcode", "");
+                            //if (string.IsNullOrEmpty(sRespData_p2))
+                            //{
+                            //    sRespData_p2 = "沒抓到掃描值";
+                            //}
+                            sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                        }
+                    }
+                    else if (event_type == "enter_agent")
+                    {
+                        sRespData_p2 = "您好~歡迎來到宏致電子";
+                        sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                    }
+                    break;
+                default:
+                    sRespData_p2 = "還未定義的MsgType";
+                    sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                    break;
+            }
+
+            //content= sMsg.Replace(">","").Substring(0,48);
+            //content = sMsg.Replace(">", "");
+
 
 
             /*
@@ -235,8 +303,8 @@ namespace WebApi_171013.Controllers
 
             // 需要发送的明文
             //string sRespData = "<xml><ToUserName><![CDATA[mycreate]]></ToUserName><FromUserName><![CDATA[wx582396d3bd56c7]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[this is a test]]></Content><MsgId>1234567890123456</MsgId><AgentID>128</AgentID></xml>";
-            string sRespData = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[ACES " + content+" this is a test]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
-            string sEncryptMsg = ""; //xml格式的密文
+            //string sRespData = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[您剛剛說:『" + content+"』 ]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
+            //string sEncryptMsg = ""; //xml格式的密文
             ret = wxcpt.EncryptMsg(sRespData, sReqTimeStamp, sReqNonce, ref sEncryptMsg);
             if (ret != 0)
             {
@@ -244,12 +312,12 @@ namespace WebApi_171013.Controllers
                 //return;
                 sError = "ERR: 加密失敗, ret: " + ret;
             }
-            if (string.IsNullOrEmpty(sError))
-            { }
-            else{
-                sRespData = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[Error " + sError + " ]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
-                ret = wxcpt.EncryptMsg(sRespData, sReqTimeStamp, sReqNonce, ref sEncryptMsg);
-            }
+            //if (string.IsNullOrEmpty(sError))
+            //{ }
+            //else{
+            //    sRespData = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[Error " + sError + " ]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
+            //    ret = wxcpt.EncryptMsg(sRespData, sReqTimeStamp, sReqNonce, ref sEncryptMsg);
+            //}
             // TODO:
             // 加密成功，企业需要将加密之后的sEncryptMsg返回
             // HttpUtils.SetResponse(sEncryptMsg);
@@ -381,7 +449,7 @@ namespace WebApi_171013.Controllers
             // 加密成功，企业需要将加密之后的sEncryptMsg返回
             // HttpUtils.SetResponse(sEncryptMsg);
             */
-            
+
         }
 
         // GET api/values/5
