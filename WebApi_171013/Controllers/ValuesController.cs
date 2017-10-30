@@ -224,45 +224,179 @@ namespace WebApi_171013.Controllers
                     break;
                 case "event":
                     event_type = root["Event"].InnerText;
-                    if (event_type=="click")
+                    switch (event_type)
                     {
-                        event_key= root["EventKey"].InnerText;
-                        switch (event_key)
-                        {
-                            case "menu_hit":
-                                sRespData_p2 = "您按了點擊測試鈕";
+                        case "click":
+                            event_key = root["EventKey"].InnerText;
+                            switch (event_key)
+                            {
+                                case "menu_hit":
+                                    sRespData_p2 = "您按了點擊測試鈕";
+                                    sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                                    break;
+                                default:
+                                    sRespData_p2 = "您按了某個鈕";
+                                    sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                                    break;
+                            }
+                            break;
+
+                        case "scancode_push":
+                            event_key = root["EventKey"].InnerText;
+                            if (event_key == "menu_push")
+                            {
+                                //掃描後回傳xml
+                                //< ScanCodeInfo >
+                                //< ScanType >< ![CDATA[qrcode]] ></ ScanType >
+                                //< ScanResult >< ![CDATA[1]] ></ ScanResult >
+                                //</ ScanCodeInfo >
+                                sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(1).InnerText;
+                                sRespData_p2 = "您的掃描值: " + sRespData_p2;
+                                //sRespData_p2 = sRespData_p2.Replace("qrcode", "");
+                                //if (string.IsNullOrEmpty(sRespData_p2))
+                                //{
+                                //    sRespData_p2 = "沒抓到掃描值";
+                                //}
                                 sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
-                                break;
-                            default:
-                                sRespData_p2 = "您按了某個鈕";
+                            }
+                            break;
+
+                        case "scancode_waitmsg":
+                            event_key = root["EventKey"].InnerText;
+                            if (event_key == "menu_push2")
+                            {
+                                //掃描後回傳xml
+                                //< ScanCodeInfo >
+                                //< ScanType >< ![CDATA[qrcode]] ></ ScanType >
+                                //< ScanResult >< ![CDATA[1]] ></ ScanResult >
+                                //</ ScanCodeInfo >
+                                sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(1).InnerText;
+                                sRespData_p2 = "您的掃描值: " + sRespData_p2;
+                                //sRespData_p2 = sRespData_p2.Replace("qrcode", "");
+                                //if (string.IsNullOrEmpty(sRespData_p2))
+                                //{
+                                //    sRespData_p2 = "沒抓到掃描值";
+                                //}
                                 sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
-                                break;
-                        }
-                    }
-                    else if(event_type == "scancode_push")
-                    {
-                        event_key = root["EventKey"].InnerText;
-                        if (event_key=="menu_push")
-                        {
-                            //掃描後回傳xml
+                            }
+                            break;
+
+                        case "pic_sysphoto":
+                            //拍照後回傳xml
                             //< ScanCodeInfo >
-                            //< ScanType >< ![CDATA[qrcode]] ></ ScanType >
-                            //< ScanResult >< ![CDATA[1]] ></ ScanResult >
+                            //< Count >1</ Count >
+                            //< PicList >
+                            //<item>
+                            //<PicMd5Sum><![CDATA[1b5f7c23b5bf75682a53e7b6d163e185]]></PicMd5Sum>
+                            //</item>
+                            //</ PicList >
                             //</ ScanCodeInfo >
-                            sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(1).InnerText;
-                            sRespData_p2 = "您的掃描值: " + sRespData_p2;
-                            //sRespData_p2 = sRespData_p2.Replace("qrcode", "");
-                            //if (string.IsNullOrEmpty(sRespData_p2))
-                            //{
-                            //    sRespData_p2 = "沒抓到掃描值";
-                            //}
+                            event_key = root["EventKey"].InnerText;
+                            if (event_key == "menu_photo")
+                            {
+                                sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(0).InnerText;
+                                sRespData_p2 = "您傳送的拍照數量: " + sRespData_p2;
+                                sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                            }
+                            break;
+
+                        case "location_select":
+                            /*
+                            定位後回傳xml
+                            <SendLocationInfo>
+                              <Location_X><![CDATA[23]]></Location_X>
+                              <Location_Y><![CDATA[113]]></Location_Y>
+                              <Scale><![CDATA[15]]></Scale>
+                              <Label><![CDATA[ 广州市海珠区客村艺苑路 106号]]></Label>
+                              <Poiname><![CDATA[]]></Poiname>
+                            </SendLocationInfo>
+                            */
+                            event_key = root["EventKey"].InnerText;
+                            if (event_key == "menu_gps")
+                            {
+                                string sLoc_X = root["SendLocationInfo"].ChildNodes.Item(0).InnerText;
+                                string sLoc_Y = root["SendLocationInfo"].ChildNodes.Item(1).InnerText;
+                                string sScale = root["SendLocationInfo"].ChildNodes.Item(2).InnerText;
+                                string sLabel = root["SendLocationInfo"].ChildNodes.Item(3).InnerText;
+                                string sPOI = root["SendLocationInfo"].ChildNodes.Item(4).InnerText;
+                                sRespData_p2 = "座標X:"+sLoc_X 
+                                    + " 座標Y:"+sLoc_Y
+                                    + " 精度:" + sScale
+                                    + " 位置名稱:" + sLabel;
+                                if (string.IsNullOrEmpty(sPOI) == false)
+                                {
+                                    sRespData_p2 = sRespData_p2+ " POI:" + sPOI;
+                                }
+                                sRespData_p2 = "您的GPS定位: " + sRespData_p2;
+                                sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                            }
+                            break;
+
+                        case "LOCATION":
+                            string sLatitude = root["Latitude"].InnerText;
+                            string sLongitude = root["Longitude"].InnerText;
+                            string sPrecision = root["Precision"].InnerText;
+                            sRespData_p2 = "緯度:" + sLatitude
+                                    + " 經度:" + sLongitude
+                                    + " 精確度:" + sPrecision;
+                            sRespData_p2 = "您的GPS定位: " + sRespData_p2;
                             sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
-                        }
-                    }
-                    else if (event_type == "enter_agent")
-                    {
-                        sRespData_p2 = "您好~歡迎來到宏致電子";
-                        sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                            break;
+
+                        case "pic_photo_or_album":
+                            /*
+                            <SendPicsInfo>
+                              <Count>1</Count>
+                              <PicList>
+                                <item>
+                                  <PicMd5Sum><![CDATA[5a75aaca956d97be686719218f275c6b]]></PicMd5Sum>
+                                </item>
+                              </PicList>
+                            </SendPicsInfo>
+                            */
+                            event_key = root["EventKey"].InnerText;
+                            if (event_key == "menu_pic")
+                            {
+                                sRespData_p2 = root["SendPicsInfo"].ChildNodes.Item(0).InnerText;
+                                sRespData_p2 = "您傳送的照片數量: " + sRespData_p2;
+                                sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                            }
+                            break;
+
+                        case "pic_weixin":
+                            /*
+                            <SendPicsInfo>
+                              <Count>1</Count>
+                              <PicList>
+                                <item>
+                                  <PicMd5Sum><![CDATA[5a75aaca956d97be686719218f275c6b]]></PicMd5Sum>
+                                </item>
+                              </PicList>
+                            </SendPicsInfo>
+                            */
+                            event_key = root["EventKey"].InnerText;
+                            if (event_key == "menu_wx_pic")
+                            {
+                                sRespData_p2 = root["SendPicsInfo"].ChildNodes.Item(0).InnerText;
+                                sRespData_p2 = "您傳送的微信照片數量: " + sRespData_p2;
+                                sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                            }
+                            break;
+
+                        case "enter_agent":
+                            sRespData_p2 = "您好,歡迎來到宏致電子";
+                            sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                            break;
+
+                        case "subscribe":  //關注
+                            sRespData_p2 = "您好,已接收關注,感謝您關注宏致電子";
+                            sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                            break;
+
+                        case "unsubscribe":  //取消關注
+                            sRespData_p2 = "您好,已取消關注,感謝您曾經關注宏致電子";
+                            sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                            break;
                     }
                     break;
                 default:
