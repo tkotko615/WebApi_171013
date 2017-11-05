@@ -189,7 +189,8 @@ namespace WebApi_171013.Controllers
             string sReqData = xdoc.InnerXml;
             string sError = "";
             string sMsg = "";  // 解析之后的明文
-            string sRespData_p1 = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[";
+            //string sRespData_p1 = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[";
+            string sRespData_p1 = "<xml><ToUserName><![CDATA[LiuQiaoLing]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[";
             string sRespData_p3 = "]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
             string sRespData_p2 = "";
             string sRespData = "";  // 需要发送的明文

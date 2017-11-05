@@ -92,8 +92,8 @@ namespace WebApi_171013.Controllers
             sr.Close();
             sr.Dispose();
 
-            //string sToUserName = doc.SelectSingleNode("xml").SelectSingleNode("ToUserName").InnerText;
-            //string sAgentID = doc.SelectSingleNode("xml").SelectSingleNode("AgentID").InnerText;
+            string sToUserName = xdoc.SelectSingleNode("xml").SelectSingleNode("ToUserName").InnerText;
+            string sAgentID = xdoc.SelectSingleNode("xml").SelectSingleNode("AgentID").InnerText;
 
             Tencent.WXBizMsgCrypt wxcpt = new Tencent.WXBizMsgCrypt(sToken, sEncodingAESKey, sCorpID);
 
@@ -144,6 +144,11 @@ namespace WebApi_171013.Controllers
                             switch (event_key)
                             {
                                 case "menu_hit":
+                                    sRespData_p2 = "您按了點擊測試鈕";
+                                    sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                                    break;
+                                case "menu_contact":
+
                                     sRespData_p2 = "您按了點擊測試鈕";
                                     sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
                                     break;
