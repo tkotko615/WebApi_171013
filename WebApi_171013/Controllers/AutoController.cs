@@ -92,8 +92,8 @@ namespace WebApi_171013.Controllers
             sr.Close();
             sr.Dispose();
 
-            string sToUserName = xdoc.SelectSingleNode("xml").SelectSingleNode("ToUserName").InnerText;
-            string sAgentID = xdoc.SelectSingleNode("xml").SelectSingleNode("AgentID").InnerText;
+            //string sToUserName = xdoc.SelectSingleNode("xml").SelectSingleNode("ToUserName").InnerText;
+            //string sAgentID = xdoc.SelectSingleNode("xml").SelectSingleNode("AgentID").InnerText;
 
             Tencent.WXBizMsgCrypt wxcpt = new Tencent.WXBizMsgCrypt(sToken, sEncodingAESKey, sCorpID);
 

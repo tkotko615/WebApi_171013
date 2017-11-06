@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -189,8 +190,7 @@ namespace WebApi_171013.Controllers
             string sReqData = xdoc.InnerXml;
             string sError = "";
             string sMsg = "";  // 解析之后的明文
-            //string sRespData_p1 = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[";
-            string sRespData_p1 = "<xml><ToUserName><![CDATA[LiuQiaoLing]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[";
+            string sRespData_p1 = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[";
             string sRespData_p3 = "]]></Content><MsgId>1234567890123456</MsgId><AgentID>1000002</AgentID></xml>";
             string sRespData_p2 = "";
             string sRespData = "";  // 需要发送的明文
@@ -234,6 +234,20 @@ namespace WebApi_171013.Controllers
                                 case "menu_hit":
                                     sRespData_p2 = "您按了點擊測試鈕";
                                     sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                                    break;
+                                case "menu_contact":
+                                    string sConnString = System.Web.Configuration.WebConfigurationManager.ConnectionStrings["WebAPI"].ConnectionString;
+                                    SqlConnection mConn = new SqlConnection(sConnString);
+                                    mConn.Open();
+                                    string sSQL = @"select * from Contract";
+                                    SqlCommand mCommand = new SqlCommand(sSQL, mConn);
+                                    SqlDataReader mDataReader = mCommand.ExecuteReader();
+                                    while (mDataReader.Read())
+                                    {
+
+                                    }
+
+                                    sRespData = "<xml><ToUserName><![CDATA[YuYuYi]]></ToUserName><FromUserName><![CDATA[wwb2491d1e47ba94f8]]></FromUserName><CreateTime>1348831860</CreateTime><MsgType><![CDATA[news]]></MsgType><ArticleCount>1</ArticleCount><Articles><item><Title><![CDATA[title1]]></Title><Description><![CDATA[description1]]></Description><PicUrl><![CDATA[picurl]]></PicUrl><Url><![CDATA[url]]></Url></item></Articles></xml>";
                                     break;
                                 default:
                                     sRespData_p2 = "您按了某個鈕";
