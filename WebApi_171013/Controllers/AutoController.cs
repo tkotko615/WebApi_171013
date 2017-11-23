@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.OracleClient;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -181,21 +182,73 @@ namespace WebApi_171013.Controllers
 
                         case "scancode_waitmsg":
                             event_key = root["EventKey"].InnerText;
-                            if (event_key == "menu_push2")
+                            switch (event_key)
                             {
-                                //掃描後回傳xml
-                                //< ScanCodeInfo >
-                                //< ScanType >< ![CDATA[qrcode]] ></ ScanType >
-                                //< ScanResult >< ![CDATA[1]] ></ ScanResult >
-                                //</ ScanCodeInfo >
-                                sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(1).InnerText;
-                                sRespData_p2 = "您的掃描值: " + sRespData_p2;
-                                //sRespData_p2 = sRespData_p2.Replace("qrcode", "");
-                                //if (string.IsNullOrEmpty(sRespData_p2))
-                                //{
-                                //    sRespData_p2 = "沒抓到掃描值";
-                                //}
-                                sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                                case "menu_push2":
+                                    //掃描後回傳xml
+                                    //< ScanCodeInfo >
+                                    //< ScanType >< ![CDATA[qrcode]] ></ ScanType >
+                                    //< ScanResult >< ![CDATA[1]] ></ ScanResult >
+                                    //</ ScanCodeInfo >
+                                    sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(1).InnerText;
+                                    sRespData_p2 = "您的掃描值: " + sRespData_p2;
+                                    //sRespData_p2 = sRespData_p2.Replace("qrcode", "");
+                                    //if (string.IsNullOrEmpty(sRespData_p2))
+                                    //{
+                                    //    sRespData_p2 = "沒抓到掃描值";
+                                    //}
+                                    sRespData = sRespData_p1 + sRespData_p2 + sRespData_p3;
+                                    break;
+
+                                case "menu_assets":
+                                    //連線字串
+                                    string connStr2 = @"Data Source=TOPPROD;Persist Security Info=True;User ID=formal_tw;Password=formal_tw;Unicode=True";
+                                    string s_faj06 = ""; //品名
+                                    string s_faj19 = ""; //保管人
+                                    string s_faj20 = ""; //保管部門
+                                    string sAssets = "";
+
+                                    sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(1).InnerText;
+
+                                    using (OracleConnection conn = new OracleConnection(connStr2))
+                                    {
+                                        conn.Open();
+                                        string sql = @"select faj02,faj022,faj06,gem02,gen02 from faj_file,gem_file,gen_file where faj20=gem01(+) and faj19=gen01(+) and faj02 = '" + sRespData_p2 + "' ";
+                                        //string sql = @"select faj02,faj022,faj06,gem02,gen02 from faj_file,gem_file,gen_file where faj20=gem01(+) and faj19=gen01(+) and faj02 = '1531620001' ";  //單一財編多附號測試
+
+                                        OracleCommand cmd = new OracleCommand(sql, conn);
+                                        OracleDataReader dr = cmd.ExecuteReader();
+                                        while (dr.Read())
+                                        {
+
+                                            if (!dr.IsDBNull(dr.GetOrdinal("faj06")))
+                                            {
+                                                s_faj06 = dr.GetString(dr.GetOrdinal("faj06"));
+                                            }
+                                            if (!dr.IsDBNull(dr.GetOrdinal("gem02")))
+                                            {
+                                                s_faj20 = dr.GetString(dr.GetOrdinal("gem02"));
+                                            }
+                                            if (!dr.IsDBNull(dr.GetOrdinal("gen02")))
+                                            {
+                                                s_faj19 = dr.GetString(dr.GetOrdinal("gen02"));
+                                            }
+                                            sAssets = sAssets+"財產編號：" + dr.GetString(dr.GetOrdinal("faj02"))
+                                                           + "\n附號：" + dr.GetString(dr.GetOrdinal("faj022"))
+                                                           + "\n品名：" + s_faj06
+                                                           + "\n保管部門：" + s_faj20
+                                                           + "\n保管人：" + s_faj19 + "\n\n";
+                                        }
+                                        conn.Close();
+                                    }
+
+                                    if (!string.IsNullOrEmpty(sAssets))
+                                    {
+                                        sAssets = sAssets.Substring(0, sAssets.Length - 2); //將最後跳兩行(\n\n)去除
+                                    }
+
+                                    sRespData = sRespData_p1 + sAssets + sRespData_p3;
+                                    break;
                             }
                             break;
 

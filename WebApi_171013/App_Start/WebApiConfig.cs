@@ -10,6 +10,8 @@ namespace WebApi_171013
         public static void Register(HttpConfiguration config)
         {
             // Web API 設定和服務
+            // WebAPI trace
+            config.EnableSystemDiagnosticsTracing();
 
             // Web API 路由
             config.MapHttpAttributeRoutes();
