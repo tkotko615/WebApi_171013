@@ -209,11 +209,17 @@ namespace WebApi_171013.Controllers
                                     string sAssets = "";
 
                                     sRespData_p2 = root["ScanCodeInfo"].ChildNodes.Item(1).InnerText;
+                                    string[] sArray = sRespData_p2.Split(',');
+                                    if (string.IsNullOrEmpty(sArray[1]))
+                                    {
+                                        sArray[1] = " ";
+                                    }
+
 
                                     using (OracleConnection conn = new OracleConnection(connStr2))
                                     {
                                         conn.Open();
-                                        string sql = @"select faj02,faj022,faj06,gem02,gen02 from faj_file,gem_file,gen_file where faj20=gem01(+) and faj19=gen01(+) and faj02 = '" + sRespData_p2 + "' ";
+                                        string sql = @"select faj02,faj022,faj06,gem02,gen02 from faj_file,gem_file,gen_file where faj20=gem01(+) and faj19=gen01(+) and faj02 = '" + sArray[0] + "' and faj022 = '" + sArray[1] + "' ";
                                         //string sql = @"select faj02,faj022,faj06,gem02,gen02 from faj_file,gem_file,gen_file where faj20=gem01(+) and faj19=gen01(+) and faj02 = '1531620001' ";  //單一財編多附號測試
 
                                         OracleCommand cmd = new OracleCommand(sql, conn);
